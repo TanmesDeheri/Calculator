@@ -46,6 +46,7 @@ function reducer(state, { type, payload }) {
                 return { ...state, currentOperand: null }
             else
             return { ...state, currentOperand: state.currentOperand.slice(0, -1) }
+        default:return state
     }
 
 }
@@ -63,6 +64,8 @@ function evaluate({ currentOperand, previousOperand, operation }) {
         case '-': result = prev - curr
             break
         case '*': result = prev * curr
+        break
+        default:result="NA"
     }
     return result.toString()
 }
