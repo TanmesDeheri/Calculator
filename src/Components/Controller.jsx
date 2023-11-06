@@ -1,4 +1,4 @@
-import { React, useReducer } from 'react'
+import { React, useReducer, useEffect } from 'react'
 import './style.css'
 import DigitButton from './DigitButton'
 import OperationButton from './OperationButton'
@@ -29,12 +29,12 @@ function reducer(state, { type, payload }) {
             return { ...state, previousOperand: evaluate(state), operation: payload.operation, currentOperand: null }
         case ACTIONS.CLEAR: return {}
         case ACTIONS.EVALUATE:
-            if(state.currentOperand==null || 
-                state.previousOperand==null || 
-                state.operation==null)
-            return state
-            return{
-                ...state,overwrite:true,previousOperand:null,operation:null,currentOperand:(evaluate(state))
+            if (state.currentOperand == null ||
+                state.previousOperand == null ||
+                state.operation == null)
+                return state
+            return {
+                ...state, overwrite: true, previousOperand: null, operation: null, currentOperand: (evaluate(state))
             }
         case ACTIONS.DELETE_DIGIT:
             if (state.overwrite)
@@ -45,8 +45,8 @@ function reducer(state, { type, payload }) {
             else if (state.currentOperand.length === 1)
                 return { ...state, currentOperand: null }
             else
-            return { ...state, currentOperand: state.currentOperand.slice(0, -1) }
-        default:return state
+                return { ...state, currentOperand: state.currentOperand.slice(0, -1) }
+        default: return state
     }
 
 }
@@ -64,22 +64,43 @@ function evaluate({ currentOperand, previousOperand, operation }) {
         case '-': result = prev - curr
             break
         case '*': result = prev * curr
-        break
-        default:result="NA"
+            break
+        default: result = "NA"
     }
     return result.toString()
 }
-const INTEGER_FORMATER=new Intl.NumberFormat('en-us',{maximumFractionDigits:0})
-function formatOperand(operand){
-    if(operand==null)
-    return
-const [integer,decimal]=operand.split('.')
-if (decimal==null)
-return INTEGER_FORMATER.format(integer)
-return `${INTEGER_FORMATER.format(integer)}.${decimal}`
+const INTEGER_FORMATER = new Intl.NumberFormat('en-us', { maximumFractionDigits: 0 })
+function formatOperand(operand) {
+    if (operand == null)
+        return
+    const [integer, decimal] = operand.split('.')
+    if (decimal == null)
+        return INTEGER_FORMATER.format(integer)
+    return `${INTEGER_FORMATER.format(integer)}.${decimal}`
 }
 export default function Controller() {
     const [{ currentOperand, previousOperand, operation }, dispatch] = useReducer(reducer, {})
+    useEffect(() => {
+        const handleKeyInput = (e) => {
+            const keyValue = e.key
+            if (/[0-9]/.test(keyValue)) {
+                dispatch({ type: ACTIONS.ADD_DIGIT, payload: { digit: keyValue } });
+            } else if (/[+*/-]/.test(keyValue)) {
+                dispatch({ type: ACTIONS.CHOOSE_OPERATION, payload: { operation: keyValue } });
+            } else if (keyValue === 'Enter') {
+                dispatch({ type: ACTIONS.EVALUATE });
+            } else if (keyValue === 'Escape') {
+                dispatch({ type: ACTIONS.CLEAR });
+            } else if (keyValue === 'Backspace') {
+                dispatch({ type: ACTIONS.DELETE_DIGIT });
+            }
+        }
+        window.addEventListener('keydown', handleKeyInput)
+        return () => {
+            window.removeEventListener('keydown', handleKeyInput)
+        }
+    }, [])
+
     return (
         <div>
             <div className="calculator-grid">
@@ -92,7 +113,7 @@ export default function Controller() {
                     </div>
                 </div>
                 <button className="span-two" onClick={() => { dispatch({ type: ACTIONS.CLEAR }) }}>AC</button>
-                <button onClick={()=>{dispatch({type:ACTIONS.DELETE_DIGIT})}} >DEL</button>
+                <button onClick={() => { dispatch({ type: ACTIONS.DELETE_DIGIT }) }} >DEL</button>
                 <OperationButton operation='/' dispatch={dispatch}>/</OperationButton>
                 <DigitButton digit='1' dispatch={dispatch}>1</DigitButton>
                 <DigitButton digit='2' dispatch={dispatch}>2</DigitButton>
@@ -108,7 +129,7 @@ export default function Controller() {
                 <OperationButton operation='-' dispatch={dispatch}>-</OperationButton>
                 <OperationButton operation='*' dispatch={dispatch}>*</OperationButton>
                 <DigitButton digit='.' dispatch={dispatch}>.</DigitButton>
-                <button className='span-two'onClick={()=>{dispatch({type:ACTIONS.EVALUATE})}}>=</button>
+                <button className='span-two' onClick={() => { dispatch({ type: ACTIONS.EVALUATE }) }}>=</button>
             </div>
         </div>
     )
